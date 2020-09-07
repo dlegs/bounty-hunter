@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+  "log"
 	"net"
 	"net/http"
 	"net/url"
@@ -58,6 +59,7 @@ func (c *Client) Enumerate(domains []string) (map[string][]string, error) {
 
 // crtsh queries crt.sh for a particular domain
 func (c *Client) crtsh(domain string, certsc chan []cert, errc chan error) {
+  log.Printf("Pulling certificate logs for %q...\n", domain)
   u, err := url.Parse(c.crtshURL)
   if err != nil {
     errc <- fmt.Errorf("failed to parse URL: %v", err)
@@ -84,14 +86,15 @@ func (c *Client) crtsh(domain string, certsc chan []cert, errc chan error) {
 	}
 	certs := []cert{}
 	if err = json.Unmarshal(body, &certs); err != nil {
-		errc <- fmt.Errorf("failed parsing body JSON: %v", err)
+		errc <- fmt.Errorf("failed parsing body JSON %s: %v", body, err)
 		return
 	}
 	errc <- nil
 	certsc <- certs
 }
 
-// dedupe de-duplicates domain names returned from crt.sh and returns the subdomain names as a slice of strings.
+// dedupe de-duplicates domain names returned from crt.sh, skips those that
+// don't resolve, and returns the subdomain names as a slice of strings.
 func dedupe(certs []cert) []string {
 	subdomains := make([]string, 0, len(certs))
 	seen := make(map[string]struct{}, len(certs))
