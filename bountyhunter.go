@@ -2,7 +2,7 @@ package main
 
 import (
   "flag"
-  "fmt"
+  "log"
 
   "github.com/dlegs/bounty-hunter/subdomains"
 )
@@ -13,8 +13,11 @@ var (
 )
 
 func main() {
-  flag.Init()
+  flag.Parse()
   s := subdomains.New()
-  subdomains := s.Enumerate("legg.io")
-  fmt.Println(subdomains)
+  subdomains, err := s.Enumerate([]string{"legg.io"})
+  if err != nil {
+    log.Fatalf("failed to enumerate subdomains: %v", err)
+  }
+  log.Println(subdomains)
 }

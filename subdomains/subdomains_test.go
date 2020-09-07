@@ -49,9 +49,9 @@ func TestCrtsh(t *testing.T) {
 			t.Parallel()
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				switch req.URL.String() {
-				case "/%3Fq=legg.io&output=json":
+				case "/?output=json&q=legg.io":
 					rw.Write([]byte(`[{"issuer_ca_id":16418,"issuer_name":"C=US, O=Let's Encrypt, CN=Let's Encrypt Authority X3","common_name":"dylan.legg.io","name_value":"dylan.legg.io","id":3305856898,"entry_timestamp":"2020-08-29T08:16:40.075","not_before":"2020-08-29T07:16:39","not_after":"2020-11-27T07:16:39"}]`))
-				case "/%3Fq=invalid.io&output=json":
+        case "/?output=json&q=invalid.io":
 					rw.Write([]byte("invalid json"))
 				default:
 					t.Fatalf("unknown URL %q", req.URL.String())
@@ -64,7 +64,7 @@ func TestCrtsh(t *testing.T) {
 			}
 			c := &Client{
 				http:     server.Client(),
-				crtshURL: u,
+				crtshURL: u.String(),
 			}
 			go c.crtsh(tc.domain, tc.certsc, tc.errc)
 			gotErr := <-tc.errc

@@ -13,7 +13,7 @@ import (
 // Client holds dependencies.
 type Client struct {
 	http     *http.Client
-	crtshURL *url.URL
+	crtshURL string
 }
 
 // cert holds cert data from crt.sh
@@ -29,13 +29,9 @@ type cert struct {
 }
 
 func New() *Client {
-  crtshURL := &url.URL{
-    Scheme: "https",
-    Host: "crt.sh",
-  }
   return &Client{
     http: &http.Client{},
-    crtshURL: crtshURL,
+    crtshURL: "https://crt.sh",
   }
 }
 
@@ -62,9 +58,21 @@ func (c *Client) Enumerate(domains []string) (map[string][]string, error) {
 
 // crtsh queries crt.sh for a particular domain
 func (c *Client) crtsh(domain string, certsc chan []cert, errc chan error) {
-	u := *c.crtshURL
-	u.Path = fmt.Sprintf("%s/?q=%s&output=json", u.Path, domain)
-	resp, err := c.http.Get(u.String())
+  u, err := url.Parse(c.crtshURL)
+  if err != nil {
+    errc <- fmt.Errorf("failed to parse URL: %v", err)
+    return
+  }
+  req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+  if err != nil {
+    errc <- fmt.Errorf("failed building request: %v", err)
+  }
+  q := req.URL.Query()
+  q.Add("q", domain)
+  q.Add("output", "json")
+  req.URL.RawQuery = q.Encode()
+
+	resp, err := c.http.Do(req)
 	if err != nil {
 		errc <- fmt.Errorf("failed to make request: %v", err)
 		return
