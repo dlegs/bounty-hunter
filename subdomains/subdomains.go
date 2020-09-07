@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+  "time"
 )
 
 // Client holds dependencies.
@@ -42,6 +43,7 @@ func (c *Client) Enumerate(domains []string) (map[string][]string, error) {
 	certsc := make(chan []cert)
 	errc := make(chan error)
 	for _, domain := range domains {
+    time.Sleep(2 * time.Second)
 		go c.crtsh(domain, certsc, errc)
 	}
 	for _, domain := range domains {
@@ -86,6 +88,7 @@ func (c *Client) crtsh(domain string, certsc chan []cert, errc chan error) {
 	}
 	certs := []cert{}
 	if err = json.Unmarshal(body, &certs); err != nil {
+		fmt.Printf("failed parsing body JSON %s: %v", body, err)
 		errc <- fmt.Errorf("failed parsing body JSON %s: %v", body, err)
 		return
 	}
