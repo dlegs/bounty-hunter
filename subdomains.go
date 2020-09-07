@@ -28,6 +28,17 @@ type cert struct {
 	NotAfter       string `json:"not_after"`
 }
 
+func New() *Client {
+  crtshURL := &url.URL{
+    Scheme: "https",
+    Host: "crt.sh",
+  }
+  return &Client{
+    http: &http.Client{},
+    crtshURL: crtshURL,
+  }
+}
+
 // Enumerate parses certificate transparency logs from crt.sh to enumerate subdomains for a list of targets.
 func (c *Client) Enumerate(domains []string) (map[string][]string, error) {
 	subdomains := make(map[string][]string, len(domains))
@@ -92,10 +103,9 @@ func dedupe(certs []cert) []string {
 
 // resolve checks to see if the subdomain resolves to an IPv4 addr.
 func resolve(subdomain string) bool {
-  ip, err := net.ResolveIPAddr("ip4", subdomain)
+  _, err := net.ResolveIPAddr("ip4", subdomain)
 	if err != nil {
 		return false
 	}
-  fmt.Println(ip)
 	return true
 }
