@@ -104,7 +104,7 @@ func Test_dedupe(t *testing.T) {
 					NameValue: "harrison.legg.io",
 				},
 				{
-					NameValue: "does-not-resolve.legg.io",
+					NameValue: "does-not-resolve-sdfsdfqwer.com",
 				},
 			},
 			wantSubdomains: []string{

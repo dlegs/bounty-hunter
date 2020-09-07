@@ -92,9 +92,10 @@ func dedupe(certs []cert) []string {
 
 // resolve checks to see if the subdomain resolves to an IPv4 addr.
 func resolve(subdomain string) bool {
-	_, err := net.ResolveIPAddr("ip4", subdomain)
+  ip, err := net.ResolveIPAddr("ip4", subdomain)
 	if err != nil {
 		return false
 	}
+  fmt.Println(ip)
 	return true
 }
