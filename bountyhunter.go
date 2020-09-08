@@ -56,10 +56,10 @@ func main() {
       for _, domain := range domains {
         for _, regex := range regexes {
           if regex.MatchString(domain.(string)) {
-            log.Printf("Found domain: %q", domain)
             if !resolves(domain.(string)) {
               continue
             }
+            log.Printf("Found domain: %q", domain)
             // TODO: port scan etc.
           }
         }
@@ -83,8 +83,15 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   regexes := []*regexp.Regexp{}
   scanner := bufio.NewScanner(res.Body)
   for scanner.Scan() {
-    pattern := regexp.QuoteMeta(scanner.Text())
+    // lint domain regex
+    if strings.Contains(scanner.Text(), "zendesk") {
+      continue
+    }
+    pattern := strings.ReplaceAll(scanner.Text(), "(", "")
+    pattern = strings.ReplaceAll(scanner.Text(), ")", "")
+    pattern = regexp.QuoteMeta(scanner.Text())
     pattern = strings.ReplaceAll(pattern, `\*`, ".*")
+    pattern = fmt.Sprintf("^%s$", pattern)
     regex := regexp.MustCompile(pattern)
     regexes = append(regexes, regex)
   }
