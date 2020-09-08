@@ -13,6 +13,7 @@ import (
 
   "github.com/CaliDog/certstream-go"
   "github.com/dlegs/bounty-hunter/portscan"
+  "github.com/dlegs/bounty-hunter/takeover"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 var (
   useBountyTargets = flag.Bool("use_bounty_targets", true, "use all available bug bounty targets from https://github.com/arkadiyt/bounty-targets-data")
   targets = flag.String("targets", "", "manually specified targets")
+  fingerprints = flag.String("fingerprints", "fingerprints.json", "JSON file containing subjack fingerprints")
 )
 
 func main() {
@@ -33,6 +35,11 @@ func main() {
   regexes, err := fetchBountyTargets()
   if err != nil {
     log.Fatalf("failed to fetch bounty targets: %v", err)
+  }
+
+  subjack, err := takeover.New(*fingerprints)
+  if err != nil {
+    log.Fatalf("failed to create subjack client: %v", err)
   }
 
   // Kick off certstream.
@@ -64,6 +71,7 @@ func main() {
             }
             log.Printf("Found domain: %q", domain.(string))
             go portscan.Scan(ctx, domain.(string))
+            go subjack.Identify(domain.(string))
           }
         }
       }
