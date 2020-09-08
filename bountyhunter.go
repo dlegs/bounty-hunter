@@ -1,6 +1,7 @@
 package main
 
 import (
+  "context"
   "bufio"
   "flag"
   "fmt"
@@ -11,6 +12,7 @@ import (
   "strings"
 
   "github.com/CaliDog/certstream-go"
+  "github.com/dlegs/bounty-hunter/portscan"
 )
 
 const (
@@ -24,6 +26,7 @@ var (
 
 func main() {
   flag.Parse()
+  ctx := context.Background()
 
   // Fetch bug bounty targets as regexes.
   // TODO: Fetch every hour.
@@ -59,8 +62,8 @@ func main() {
             if !resolves(domain.(string)) {
               continue
             }
-            log.Printf("Found domain: %q", domain)
-            // TODO: port scan etc.
+            log.Printf("Found domain: %q", domain.(string))
+            go portscan.Scan(ctx, domain.(string))
           }
         }
       }
