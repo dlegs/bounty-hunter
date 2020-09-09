@@ -11,9 +11,11 @@ import (
   "regexp"
   "strings"
 
+  "golang.org/x/net/publicsuffix"
   "github.com/CaliDog/certstream-go"
   "github.com/dlegs/bounty-hunter/portscan"
   "github.com/dlegs/bounty-hunter/takeover"
+  "github.com/dlegs/bounty-hunter/storage"
 )
 
 const (
@@ -24,6 +26,7 @@ var (
   useBountyTargets = flag.Bool("use_bounty_targets", true, "use all available bug bounty targets from https://github.com/arkadiyt/bounty-targets-data")
   targets = flag.String("targets", "", "manually specified targets")
   fingerprints = flag.String("fingerprints", "fingerprints.json", "JSON file containing subjack fingerprints")
+  dbName = flag.String("db_name", "bountyhunter.db", "name of sqlite db file to use")
 )
 
 func main() {
@@ -42,6 +45,11 @@ func main() {
     log.Fatalf("failed to create subjack client: %v", err)
   }
 
+  db, err := storage.New(*dbName)
+  if err != nil {
+    log.Fatalf("failed to create sqlite client: %v", err)
+  }
+
   // Kick off certstream.
   stream, errStream := certstream.CertStreamEventStream(false)
   for {
@@ -56,22 +64,40 @@ func main() {
         break
       }
 
-      // Parse domains from cert log.
-      domains, err := jq.Array("data", "leaf_cert", "all_domains")
+      // Parse subdomains from cert log.
+      subdomains, err := jq.Array("data", "leaf_cert", "all_domains")
       if err != nil {
         log.Fatalf("failed to decode jq array: %v", err)
       }
       // Check if domains match bug bounty target regexes.
       // TODO: deal with dupes.
-      for _, domain := range domains {
+      for _, subdomain := range subdomains {
         for _, regex := range regexes {
-          if regex.MatchString(domain.(string)) {
-            if !resolves(domain.(string)) {
+          if regex.MatchString(subdomain.(string)) {
+            if !resolves(subdomain.(string)) {
               continue
             }
-            log.Printf("Found domain: %q", domain.(string))
-            go portscan.Scan(ctx, domain.(string))
-            go subjack.Identify(domain.(string))
+            domain, err := publicsuffix.EffectiveTLDPlusOne(subdomain.(string))
+            if err != nil {
+              log.Fatalf("failed to parse domain: %v", err)
+            }
+            if err := db.InsertDomain(domain); err != nil {
+              log.Fatalf("failed to insert domain into db: %v", err)
+            }
+            exists, err := db.SubdomainExists(subdomain.(string), domain)
+            if err != nil {
+              log.Fatalf("failed to check for existence of subdomain %q: %v", subdomain.(string), err)
+            }
+            if !exists {
+              log.Printf("Found new subdomain: %q", subdomain.(string))
+              if err := db.InsertSubdomain(subdomain.(string), domain); err != nil {
+                log.Fatalf("failed to insert subdomain into db: %v", err)
+              }
+            } else {
+              log.Printf("Found existing subdomain: %q", subdomain.(string))
+            }
+            go portscan.Scan(ctx, subdomain.(string))
+            go subjack.Identify(subdomain.(string))
           }
         }
       }
@@ -96,7 +122,7 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   for scanner.Scan() {
     // lint domain regex
     if strings.Contains(scanner.Text(), "zendesk") {
-      continue
+      //continue
     }
     pattern := strings.ReplaceAll(scanner.Text(), "(", "")
     pattern = strings.ReplaceAll(scanner.Text(), ")", "")

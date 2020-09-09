@@ -13,4 +13,5 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
+	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 )

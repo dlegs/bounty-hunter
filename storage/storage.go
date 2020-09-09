@@ -23,11 +23,11 @@ func New(dbName string) (*Client, error) {
     return nil, fmt.Errorf("failed creating domains table: %v", err)
   }
 
-  if _, err := db.Exec("CREATE TABLE IF NOT EXISTS subdomains (subdomain TEXT PRIMARY KEY, domain TEXT FOREIGN KEY REFERENCES domains(domain), takeover BOOLEAN)"); err != nil {
+  if _, err := db.Exec("CREATE TABLE IF NOT EXISTS subdomains (subdomain TEXT PRIMARY KEY, domain TEXT, takeover BOOLEAN, FOREIGN KEY(domain) REFERENCES domains(domain))"); err != nil {
     return nil, fmt.Errorf("failed creating subdomains table: %v", err)
   }
 
-  if _, err := db.Exec("CREATE TABLE IF NOT EXISTS ports (id INTEGER AUTO_INCREMENT PRIMARY KEY, port INTEGER, subdomain TEXT FOREIGN KEY REFERENCES subdomains(subdomain), protocol TEXT, service TEXT, product TEXT, version TEXT)"); err != nil {
+  if _, err := db.Exec("CREATE TABLE IF NOT EXISTS ports (id INTEGER AUTO_INCREMENT PRIMARY KEY, port INTEGER, subdomain TEXT, protocol TEXT, service TEXT, product TEXT, version TEXT, FOREIGN KEY(subdomain) references subdomains(subdomain))"); err != nil {
     return nil, fmt.Errorf("failed creating ports table: %v", err)
   }
 
@@ -37,7 +37,7 @@ func New(dbName string) (*Client, error) {
 }
 
 func (c *Client) InsertDomain(domain string) error {
-  statement, err := c.db.Prepare("INSERT IGNORE INTO domains (domain) VALUES (?)")
+  statement, err := c.db.Prepare("INSERT OR IGNORE INTO domains (domain) VALUES (?)")
   if err != nil {
     return fmt.Errorf("failed to prepare insert statement: %v", err)
   }
@@ -48,7 +48,7 @@ func (c *Client) InsertDomain(domain string) error {
 }
 
 func (c *Client) InsertSubdomain(subdomain string, domain string) error {
-  statement, err := c.db.Prepare("INSERT IGNORE INTO subdomains (subdomain, domain) VALUES (?, ?)")
+  statement, err := c.db.Prepare("INSERT INTO subdomains (subdomain, domain) VALUES (?, ?)")
   if err != nil {
     return fmt.Errorf("failed to prepare insert statement: %v", err)
   }
@@ -67,4 +67,38 @@ func (c *Client) InsertPort(port int, subdomain string, protocol string, service
     return fmt.Errorf("failed to execute insert statement: %v", err)
   }
   return nil
+}
+
+func (c *Client) SubdomainExists(subdomain string, domain string) (bool, error) {
+  statement, err := c.db.Prepare("SELECT subdomain FROM subdomains WHERE subdomain = ? AND domain = ? LIMIT 1")
+  if err != nil {
+    return false, fmt.Errorf("failed to prepare exist statement: %v", err)
+  }
+  row := statement.QueryRow(subdomain, domain)
+  var exists string
+  err = row.Scan(&exists)
+  if err == sql.ErrNoRows {
+    return false, nil
+  }
+  if len(exists) == 0 {
+    return false, fmt.Errorf("failed to exec query: %v", err)
+  }
+  return true, nil
+}
+
+func (c *Client) PortExists(port int, subdomain string) (bool, error) {
+  statement, err := c.db.Prepare("SELECT subdomain FROM ports WHERE port = ? AND subdomain = ? LIMIT 1")
+  if err != nil {
+    return false, fmt.Errorf("failed to prepare exist statement: %v", err)
+  }
+  row := statement.QueryRow(port, subdomain)
+  var exists string
+  err = row.Scan(&exists)
+  if err == sql.ErrNoRows {
+    return false, nil
+  }
+  if len(exists) == 0 {
+    return false, fmt.Errorf("failed to exec query: %v", err)
+  }
+  return true, nil
 }
