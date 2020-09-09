@@ -10,6 +10,7 @@ require (
 	github.com/haccer/available v0.0.0-20180624175330-521f55248d4f // indirect
 	github.com/haccer/subjack v0.0.0-20190731105901-b800ca47290a
 	github.com/jmoiron/jsonq v0.0.0-20150511023944-e874b168d07e // indirect
+	github.com/mattn/go-sqlite3 v1.14.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/valyala/fasthttp v1.16.0 // indirect
 )
