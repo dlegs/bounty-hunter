@@ -158,7 +158,8 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   for scanner.Scan() {
     // lint domain regex
     if strings.Contains(scanner.Text(), "zendesk") {
-      //continue
+      // skip zendesk.
+      continue
     }
     pattern := strings.ReplaceAll(scanner.Text(), "(", "")
     pattern = strings.ReplaceAll(scanner.Text(), ")", "")
