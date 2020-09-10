@@ -51,22 +51,22 @@ func New(slackEnv string) (*Client, error) {
 }
 
 func(c *Client) NotifyPort(port *storage.Port) error {
-  msg := fmt.Sprintf("Newly opened port on host: %q\n\tPort: %d/%s %s %s %s", port.Subdomain, port.Number, port.Protocol, port.Service, port.Product, port.Version)
+  msg := fmt.Sprintf("Newly opened port on host: %\n\tPort: %d/%s %s %s %s", port.Subdomain, port.Number, port.Protocol, port.Service, port.Product, port.Version)
   return c.sendMsg(msg)
 }
 
 func (c *Client) NotifyTakeover(subdomain *storage.Subdomain) error {
-  msg := fmt.Sprintf("New subdomain takeover on host: %q\n\tService: %q", subdomain.Name, subdomain.Takeover)
+  msg := fmt.Sprintf("New subdomain takeover on host: %\n\tService: %s", subdomain.Name, subdomain.Takeover)
   return c.sendMsg(msg)
 }
 
 func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
-  msg := fmt.Sprintf("New subdomain found: %q", subdomain.Name)
+  msg := fmt.Sprintf("New subdomain found: %", subdomain.Name)
   for _, port := range subdomain.Ports {
     msg += fmt.Sprintf("\n\tPort: %d/%s %s %s %s", port.Number, port.Protocol, port.Service, port.Product, port.Version)
   }
   if subdomain.Takeover != "" {
-    msg += fmt.Sprintf("Vulnerable to subdomain takeover: %q", subdomain.Takeover)
+    msg += fmt.Sprintf("Vulnerable to subdomain takeover: %s", subdomain.Takeover)
   }
   return c.sendMsg(msg)
 }
