@@ -8,13 +8,17 @@ import (
   "strings"
 
   "github.com/haccer/subjack/subjack"
+  "github.com/dlegs/bounty-hunter/notify"
+  "github.com/dlegs/bounty-hunter/storage"
 )
 
 type Client struct {
-  Fingerprints []subjack.Fingerprints
+  db *storage.Client
+  slack *notify.Client
+  fingerprints []subjack.Fingerprints
 }
 
-func New(fingerprintsFile string) (*Client, error) {
+func New(db *storage.Client, slack *notify.Client, fingerprintsFile string) (*Client, error) {
   var fingerprints []subjack.Fingerprints
   config, err := ioutil.ReadFile(fingerprintsFile)
   if err != nil {
@@ -24,14 +28,27 @@ func New(fingerprintsFile string) (*Client, error) {
     return nil, fmt.Errorf("failed to parse fingerprints json: %v")
   }
   return &Client{
-    Fingerprints: fingerprints,
+    db: db,
+    slack: slack,
+    fingerprints: fingerprints,
   }, nil
 }
 
-func(c *Client) Identify(subdomain string) {
-  service := subjack.Identify(subdomain, false, false, 10, c.Fingerprints)
+func(c *Client) Identify(subdomain *storage.Subdomain, rescan bool, takeoverc chan string) {
+  service := subjack.Identify(subdomain.Name, false, false, 10, c.fingerprints)
   if service != "" {
-    service = strings.ToLower(service)
-    fmt.Printf("%s is pointing to a vulnerable %s service.\n", subdomain, service)
+    subdomain.Takeover = strings.ToLower(service)
+    // If subdomain exists, notify that a new takeover has been found.
+    if rescan {
+      if err := c.slack.NotifyTakeover(subdomain); err != nil {
+        return
+      }
+    }
+  } else {
+    subdomain.Takeover = ""
   }
+  if err := c.db.InsertSubdomain(subdomain); err != nil {
+    return
+  }
+  takeoverc <- strings.ToLower(service)
 }

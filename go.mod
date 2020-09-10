@@ -12,6 +12,7 @@ require (
 	github.com/jmoiron/jsonq v0.0.0-20150511023944-e874b168d07e // indirect
 	github.com/mattn/go-sqlite3 v1.14.2
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/slack-go/slack v0.6.6
 	github.com/valyala/fasthttp v1.16.0 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 )
