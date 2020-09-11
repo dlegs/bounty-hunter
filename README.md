@@ -44,9 +44,9 @@ Bounty Hunter glues together various different recon tools and uses Slack to sen
 1. A list of wildcard domains that belong to companies with bug bounty programs is pulled hourly from [arkadiyt/bounty-targets-data](https://github.com/arkadiyt/bounty-targets-data) and compiled into golang regexes.
 2. [Certstream](https://github.com/CaliDog/certstream-go) is used to stream certificate transparency logs, where we look for subdomains that match the pulled regexes.
 3. Found subdomains are put under a suite of scans:
-  1. Port scanned with [nmap](https://nmap.org/)
-  2. [Subjack](https://github.com/haccer/subjack) is used to check for a possible subdomain takeover
-  3. If a web server is running on a port, a screenshot is taken via [gowitness](https://github.com/sensepost/gowitness) libraries.
+  - Port scanned with [nmap](https://nmap.org/)
+  - [Subjack](https://github.com/haccer/subjack) is used to check for a possible subdomain takeover
+  - If a web server is running on a port, a screenshot is taken via [gowitness](https://github.com/sensepost/gowitness) libraries.
 4. An sqlite database is used to keep track of found hosts.
 5. Slack is used to fire off notifications.
 
