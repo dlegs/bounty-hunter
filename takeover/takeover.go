@@ -12,12 +12,14 @@ import (
   "github.com/dlegs/bounty-hunter/storage"
 )
 
+// Client holds dependencies.
 type Client struct {
   db *storage.Client
   slack *notify.Client
   fingerprints []subjack.Fingerprints
 }
 
+// New returns a new subjack client.
 func New(db *storage.Client, slack *notify.Client, fingerprintsFile string) (*Client, error) {
   var fingerprints []subjack.Fingerprints
   config, err := ioutil.ReadFile(fingerprintsFile)
@@ -34,6 +36,7 @@ func New(db *storage.Client, slack *notify.Client, fingerprintsFile string) (*Cl
   }, nil
 }
 
+// Identify checks to see if a subdomain takeover is available.
 func(c *Client) Identify(subdomain *storage.Subdomain, rescan bool, takeoverc chan string) {
   service := subjack.Identify(subdomain.Name, false, false, 10, c.fingerprints)
   if service != "" {

@@ -9,11 +9,13 @@ import (
   "github.com/dlegs/bounty-hunter/storage"
 )
 
+// Client holds the slack client dependency and channels the bot is part of.
 type Client struct {
   slack *slack.Client
   channels []string
 }
 
+// New returns a new authenticated slack client.
 func New(slackEnv string) (*Client, error) {
   token := os.Getenv(slackEnv)
   if token == "" {
@@ -50,18 +52,24 @@ func New(slackEnv string) (*Client, error) {
   }, nil
 }
 
+// NotifyPort sends a slack message to available channels that a port has been
+// new port has opened up on an existing subdomain.
 func(c *Client) NotifyPort(port *storage.Port) error {
-  msg := fmt.Sprintf("Newly opened port on host: %\n\tPort: %d/%s %s %s %s", port.Subdomain, port.Number, port.Protocol, port.Service, port.Product, port.Version)
+  msg := fmt.Sprintf("Newly opened port on host: %s\n\tPort: %d/%s %s %s %s", port.Subdomain, port.Number, port.Protocol, port.Service, port.Product, port.Version)
   return c.sendMsg(msg)
 }
 
+// NotifyTakeover sends a slack message to available channels that a subdomain
+// takeover has been found on a subdomain.
 func (c *Client) NotifyTakeover(subdomain *storage.Subdomain) error {
-  msg := fmt.Sprintf("New subdomain takeover on host: %\n\tService: %s", subdomain.Name, subdomain.Takeover)
+  msg := fmt.Sprintf("New subdomain takeover on host: %s\n\tService: %s", subdomain.Name, subdomain.Takeover)
   return c.sendMsg(msg)
 }
 
+// NotifySubdomainr sends a slack message to available channels that a subdomain
+// has been found.
 func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
-  msg := fmt.Sprintf("New subdomain found: %", subdomain.Name)
+  msg := fmt.Sprintf("New subdomain found: %s", subdomain.Name)
   for _, port := range subdomain.Ports {
     msg += fmt.Sprintf("\n\tPort: %d/%s %s %s %s", port.Number, port.Protocol, port.Service, port.Product, port.Version)
   }
@@ -71,6 +79,7 @@ func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
   return c.sendMsg(msg)
 }
 
+// sendMsg sends a string to all available slack channels.
 func(c *Client) sendMsg(msg string) error {
   for _, channel := range c.channels {
     if _, _, _, err := c.slack.SendMessage(channel, slack.MsgOptionText(msg, false)); err != nil {

@@ -10,11 +10,13 @@ import (
   "github.com/dlegs/bounty-hunter/storage"
 )
 
+// Client holds db and slack dependencies.
 type Client struct {
   db *storage.Client
   slack *notify.Client
 }
 
+// New returns a new client.
 func New(db *storage.Client, slack *notify.Client) *Client {
   return &Client{
     db: db,
@@ -22,6 +24,7 @@ func New(db *storage.Client, slack *notify.Client) *Client {
   }
 }
 
+// Scan performs an nmap scan and sends found ports to the portsc channel.
 func (c *Client) Scan(ctx context.Context, subdomain *storage.Subdomain, rescan bool, portsc chan []*storage.Port) {
   scanner, err := nmap.NewScanner(
     nmap.WithTargets(subdomain.Name),

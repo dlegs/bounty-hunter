@@ -9,15 +9,18 @@ import (
   _ "github.com/mattn/go-sqlite3"
 )
 
+// Client holds the sql dependency.
 type Client struct {
   db *sql.DB
 }
 
+// Domain represents a domain.
 type Domain struct {
   Name string
   Subdomains []Subdomain
 }
 
+// Subdomain represents a subdomain.
 type Subdomain struct {
   Name string
   Domain string
@@ -25,6 +28,7 @@ type Subdomain struct {
   Takeover string
 }
 
+// Port represents a port.
 type Port struct {
   Number int
   Subdomain string
@@ -34,6 +38,7 @@ type Port struct {
   Version string
 }
 
+// New returns a new db client and creates tables if this is the first run.
 func New(dbName string) (*Client, error) {
   db, err := sql.Open("sqlite3", dbName)
   if err != nil {
@@ -57,6 +62,7 @@ func New(dbName string) (*Client, error) {
   }, nil
 }
 
+// InsertDomain inserts a domain into the db.
 func (c *Client) InsertDomain(domain *Domain) error {
   statement, err := c.db.Prepare("INSERT OR IGNORE INTO domains (domain) VALUES (?)")
   if err != nil {
@@ -68,6 +74,7 @@ func (c *Client) InsertDomain(domain *Domain) error {
   return nil
 }
 
+// InsertSubdomain inserts a subdomain into the db.
 func (c *Client) InsertSubdomain(subdomain *Subdomain) error {
   statement, err := c.db.Prepare("INSERT OR IGNORE INTO subdomains (subdomain, domain, takeover) VALUES (?, ?, ?)")
   if err != nil {
@@ -79,6 +86,7 @@ func (c *Client) InsertSubdomain(subdomain *Subdomain) error {
   return nil
 }
 
+// InsertPort inserts a port into the db.
 func (c *Client) InsertPort(port *Port) error {
   statement, err := c.db.Prepare("INSERT INTO ports (port, subdomain, protocol, service, product, version) VALUES (?, ?, ?, ?, ?, ?)")
   if err != nil {
@@ -90,6 +98,7 @@ func (c *Client) InsertPort(port *Port) error {
   return nil
 }
 
+// SubdomainExists returns whether a subdomain has already been inserted.
 func (c *Client) SubdomainExists(subdomain *Subdomain) (bool, error) {
   statement, err := c.db.Prepare("SELECT subdomain FROM subdomains WHERE subdomain = ? AND domain = ? LIMIT 1")
   if err != nil {
@@ -106,6 +115,7 @@ func (c *Client) SubdomainExists(subdomain *Subdomain) (bool, error) {
   return true, nil
 }
 
+// PortExists returns whether a port has already been inserted.
 func (c *Client) PortExists(port *Port) (bool, error) {
   statement, err := c.db.Prepare("SELECT subdomain FROM ports WHERE port = ? AND subdomain = ?  AND protocol = ? AND service = ? AND product = ? AND VERSION = ? LIMIT 1")
   if err != nil {

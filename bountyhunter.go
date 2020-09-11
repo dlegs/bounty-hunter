@@ -172,6 +172,7 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   return regexes, nil
 }
 
+// resolves performs a DNS A lookup on the domain.
 func resolves(domain string) bool {
   _, err := net.ResolveIPAddr("ip4", domain)
   if err != nil {
@@ -180,6 +181,7 @@ func resolves(domain string) bool {
   return true
 }
 
+// dedupe removes duplicate strings from a string array.
 func dedupe(subdomains []string) []string {
   seen := make(map[string]struct{}, len(subdomains))
   j := 0
