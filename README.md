@@ -116,4 +116,4 @@ Distributed under the GPLv3 License. See `LICENSE` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@dylspickle](https://twitter.com/dylspickle) - dylan@legg.io
+Dylan Leggio - [@dylspickle](https://twitter.com/dylspickle) - dylan@legg.io
