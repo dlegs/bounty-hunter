@@ -12,42 +12,57 @@ import (
   "github.com/chromedp/cdproto/page"
 )
 
-func Screenshot(subdomain *storage.Subdomain, done chan bool) {
-  // Start chrome. Maybe only call this once per run?
-  ctx, cancel := chromedp.NewContext(context.Background())
-  defer cancel()
-  if err := chromedp.Run(ctx, screenshotTasks(subdomain)); err != nil {
-    log.Fatalf("failed to execute screenshot tasks: %v", err)
+// Client holds a Chrome context.
+type Client struct {
+  ctx context.Context
+  cancel context.CancelFunc
+}
+
+// New creates a chrome context.
+func New(ctx context.Context) *Client {
+  c := &Client{}
+  c.ctx, c.cancel = chromedp.NewContext(ctx)
+  return c
+}
+
+func (c *Client) Close() {
+  c.cancel()
+}
+
+func(c *Client) Screenshot(subdomain *storage.Subdomain, done chan bool) {
+  for _, port := range subdomain.Ports {
+    if port.Service != "http" && port.Service != "https" {
+      continue
+    }
+    var buf []byte
+    scheme := "http"
+    if port.Service == "https" || port.Number == 443 || port.Number == 8443 {
+      scheme = "https"
+    }
+    url := fmt.Sprintf("%s://%s:%d", scheme, port.Subdomain, port.Number)
+    fileName := fmt.Sprintf("/tmp/%s-%d.png", port.Subdomain, port.Number)
+    if err := chromedp.Run(c.ctx, tasks(url, &buf)); err != nil {
+      log.Fatalf("failed to run chrome tasks: %v", err)
+    }
+    if err := ioutil.WriteFile(fileName, buf, 0644); err != nil {
+      log.Fatalf("failed to write image to disk: %v", err)
+    }
+    port.Screenshot = fileName
   }
-  fmt.Printf("subdomain: %v", subdomain)
+
   done <- true
 }
 
-func screenshotTasks(subdomain *storage.ubdomain) chromedp.Tasks {
-  tasks := chromedp.Tasks{}
-  for _, port := range subdomain.Ports {
-    // Skip ports not running a web server.
-    if port.Service != "https" && port.Service != "http" {
-      continue
-    }
-    // Navigate to the url:port.
-    tasks = append(tasks, chromedp.Navigate(fmt.Sprintf("%s:%d", port.Subdomain, port.Number)))
-    tasks = append(tasks, chromedp.ActionFunc(func(ctx context.Context) error {
-      // Capture the screenshot. Maybe adjust quality?
-      img, err := page.CaptureScreenshot().WithQuality(90).Do(ctx)
+func tasks(url string, res *[]byte) chromedp.Tasks {
+  // TODO: possibly wait for page to load?
+  return chromedp.Tasks{
+    chromedp.Navigate(url),
+    chromedp.ActionFunc(func(ctx context.Context) (err error) {
+      *res, err = page.CaptureScreenshot().WithQuality(90).Do(ctx)
       if err != nil {
-        log.Fatalf("failed to capture screenshot: %v", err)
+        return fmt.Errorf("failed to capture screenshot of page %s: %v", url, err)
       }
-      // Write img to /tmp.
-      fileName := fmt.Sprintf("/tmp/%s-%d.png", port.Subdomain, port.Number)
-      if err = ioutil.WriteFile(fileName, img, 0644); err != nil {
-        log.Fatalf("failed to write img to file: %v", err)
-      }
-      // Mark where we saved the file.
-      port.Screenshot = fileName
-      fmt.Printf("port: %v\n", port)
       return nil
-    }))
+    }),
   }
-  return tasks
 }

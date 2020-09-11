@@ -48,18 +48,17 @@ func main() {
   if err != nil {
     log.Fatalf("failed to create sqlite client: %v", err)
   }
-
   slack, err := notify.New(*slackEnv)
   if err != nil {
     log.Fatalf("failed to creat slack client: %v", err)
   }
-
   subjack, err := takeover.New(db, slack, *fingerprints)
   if err != nil {
     log.Fatalf("failed to create subjack client: %v", err)
   }
-
   nmap := portscan.New(db, slack)
+  chrome := screenshot.New(ctx)
+  defer chrome.Close()
 
   // Kick off certstream.
   stream, errStream := certstream.CertStreamEventStream(false)
@@ -132,7 +131,7 @@ func main() {
               if !exists {
                 // Run analysis e.g. screenshots on web servers.
                 done := make(chan bool, 1)
-                go screenshot.Screenshot(subdomain, done)
+                go chrome.Screenshot(subdomain, done)
                 <-done
                 if err := slack.NotifySubdomain(subdomain); err != nil {
                   log.Fatalf("failed to notify new subdomain %v: %v", subdomain, err)

@@ -58,9 +58,12 @@ To get a local copy up and running follow these steps.
 This is an example of how to list things you need to use the software and how to install them.
 * A Slack App
   * Create one at [https://api.slack.com](https://api.slack.com)
+  * Add scopes **channels:read**, **chat:write**, and **files:write**
+  * Copy your OAuth Token.
 * Nmap
-  * `sudo apt-get install -y nmap`
+  * `sudo apt-get install -y nmap` or similar.
 * Chromium or Chrome
+  * `sudo apt-get install -y chromium` or similar.
 
 ### Installation
 1. Set your slack bot's access token as an environment variable

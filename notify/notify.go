@@ -86,6 +86,7 @@ func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
     }
     if _, err := c.slack.UploadFile(slack.FileUploadParameters{
       File: port.Screenshot,
+      Channels: c.channels,
     }); err != nil {
       return fmt.Errorf("failed to upload screnshot of port %v: %v", port, err)
     }
