@@ -36,6 +36,8 @@ type Port struct {
   Service string
   Product string
   Version string
+  // File containing a screenshot of the web server
+  Screenshot string
 }
 
 // New returns a new db client and creates tables if this is the first run.

@@ -68,7 +68,7 @@ func (c *Client) Scan(ctx context.Context, subdomain *storage.Subdomain, rescan 
       }
       // Port is new, so insert into DB.
       if !exists {
-        if err = c.db.InsertPort(port); err != nil {
+        if err =c.db.InsertPort(port); err != nil {
           log.Fatalf("failed to insert port %v: %v", port, err)
         }
         // If we've seen the host already, alert that a new port opened up. 

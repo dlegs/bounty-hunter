@@ -66,8 +66,9 @@ func (c *Client) NotifyTakeover(subdomain *storage.Subdomain) error {
   return c.sendMsg(msg)
 }
 
-// NotifySubdomainr sends a slack message to available channels that a subdomain
+// NotifySubdomain sends a slack message to available channels that a subdomain
 // has been found.
+// TODO: format a nicer message
 func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
   msg := fmt.Sprintf("New subdomain found: %s", subdomain.Name)
   for _, port := range subdomain.Ports {
@@ -76,7 +77,20 @@ func (c *Client) NotifySubdomain(subdomain *storage.Subdomain) error {
   if subdomain.Takeover != "" {
     msg += fmt.Sprintf("Vulnerable to subdomain takeover: %s", subdomain.Takeover)
   }
-  return c.sendMsg(msg)
+  if err := c.sendMsg(msg); err != nil {
+    return err
+  }
+  for _, port := range subdomain.Ports {
+    if port.Screenshot == "" {
+      continue
+    }
+    if _, err := c.slack.UploadFile(slack.FileUploadParameters{
+      File: port.Screenshot,
+    }); err != nil {
+      return fmt.Errorf("failed to upload screnshot of port %v: %v", port, err)
+    }
+  }
+  return nil
 }
 
 // sendMsg sends a string to all available slack channels.

@@ -15,6 +15,7 @@ import (
   "github.com/CaliDog/certstream-go"
   "github.com/dlegs/bounty-hunter/notify"
   "github.com/dlegs/bounty-hunter/portscan"
+  "github.com/dlegs/bounty-hunter/screenshot"
   "github.com/dlegs/bounty-hunter/storage"
   "github.com/dlegs/bounty-hunter/takeover"
 )
@@ -118,7 +119,7 @@ func main() {
                   log.Fatalf("failed to insert subdomain into db: %v", err)
                 }
               } else {
-                log.Printf("Found existing subdomain: %q", subdomain)
+                log.Printf("Found existing subdomain: %q", subdomain.Name)
               }
               // Run scanners regardless of whether subdomain is new.
               portsc := make(chan []*storage.Port, 1)
@@ -129,6 +130,10 @@ func main() {
               subdomain.Takeover = <-takeoverc
               // If the subdomain is new, now we notify with full scan results.
               if !exists {
+                // Run analysis e.g. screenshots on web servers.
+                done := make(chan bool, 1)
+                go screenshot.Screenshot(subdomain, done)
+                <-done
                 if err := slack.NotifySubdomain(subdomain); err != nil {
                   log.Fatalf("failed to notify new subdomain %v: %v", subdomain, err)
                 }
@@ -187,7 +192,7 @@ func dedupe(subdomains []string) []string {
   j := 0
   for _, subdomain := range subdomains {
     if _, ok := seen[subdomain]; ok {
-      continue
+      //continue
     }
     seen[subdomain] = struct{}{}
     subdomains[j] = subdomain
