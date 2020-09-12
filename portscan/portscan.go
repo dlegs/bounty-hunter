@@ -42,7 +42,7 @@ func (c *Client) Scan(ctx context.Context, subdomain *storage.Subdomain, rescan 
     log.Fatalf("failed to run nmap scanner: %v", err)
   }
   if warn != nil {
-    log.Fatalf("failed to run nmap scanner: %v", err)
+    log.Printf("failed to run nmap scanner: %v", err)
   }
 
   ports := []*storage.Port{}
@@ -71,12 +71,14 @@ func (c *Client) Scan(ctx context.Context, subdomain *storage.Subdomain, rescan 
         if err =c.db.InsertPort(port); err != nil {
           log.Fatalf("failed to insert port %v: %v", port, err)
         }
+        // TODO: make sure this isn't sent redundantly.
         // If we've seen the host already, alert that a new port opened up. 
+        /*
         if rescan {
           if err = c.slack.NotifyPort(port); err != nil {
             log.Fatalf("failed to notify new port %v: %v", port, err)
           }
-        }
+        }*/
         // Otherwise, do nothing since we'll send an alert for the whole host
         // later.
       }

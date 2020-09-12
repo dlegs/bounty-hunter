@@ -114,12 +114,30 @@ func main() {
               // done.
               if !exists {
                 log.Printf("Found new subdomain: %q", subdomain.Name)
+                // Insert subdomain into db.
                 if err := db.InsertSubdomain(subdomain); err != nil {
                   log.Fatalf("failed to insert subdomain into db: %v", err)
+                }
+                // Run scanners.
+                portsc := make(chan []*storage.Port, 1)
+                takeoverc := make(chan string, 1)
+                go nmap.Scan(ctx, subdomain, exists, portsc)
+                go subjack.Identify(subdomain, exists, takeoverc)
+                subdomain.Ports = <-portsc
+                subdomain.Takeover = <-takeoverc
+
+                // Run analysis e.g. screenshots on web servers.
+                done := make(chan bool, 1)
+                go chrome.Screenshot(subdomain, done)
+                <-done
+                if err := slack.NotifySubdomain(subdomain); err != nil {
+                  log.Fatalf("failed to notify new subdomain %v: %v", subdomain, err)
                 }
               } else {
                 log.Printf("Found existing subdomain: %q", subdomain.Name)
               }
+              // TODO: fix redundant alerts. For now, only scan new domains.
+              /*
               // Run scanners regardless of whether subdomain is new.
               portsc := make(chan []*storage.Port, 1)
               takeoverc := make(chan string, 1)
@@ -136,7 +154,7 @@ func main() {
                 if err := slack.NotifySubdomain(subdomain); err != nil {
                   log.Fatalf("failed to notify new subdomain %v: %v", subdomain, err)
                 }
-              }
+              }*/
             }
           }
         }
@@ -161,8 +179,8 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   scanner := bufio.NewScanner(res.Body)
   for scanner.Scan() {
     // lint domain regex
-    if strings.Contains(scanner.Text(), "zendesk") {
-      // skip zendesk.
+    if strings.Contains(scanner.Text(), "zendesk") || strings.Contains(scanner.Text(), "nflxext") {
+      // skip zendesk and certain netflix certs.
       continue
     }
     pattern := strings.ReplaceAll(scanner.Text(), "(", "")
