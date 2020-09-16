@@ -30,6 +30,7 @@ var (
   fingerprints = flag.String("fingerprints", "fingerprints.json", "JSON file containing subjack fingerprints")
   dbName = flag.String("db_name", "bountyhunter.db", "name of sqlite db file to use")
   slackEnv = flag.String("slack_env", "SLACK_TOKEN", "name of env variable holding slack token")
+  manualTargets = []string{"*.sandyou.be", "*.synergiecareers.be", "*.synergieconstruct.be", "*.werkenbijsynergie.be"}
 )
 
 func main() {
@@ -160,8 +161,8 @@ func main() {
         }
       }()
 
-    case err := <-errStream:
-      log.Print(err)
+    case <-errStream:
+      //log.Print(err)
     }
   }
 }
@@ -179,17 +180,14 @@ func fetchBountyTargets() ([]*regexp.Regexp, error) {
   scanner := bufio.NewScanner(res.Body)
   for scanner.Scan() {
     // lint domain regex
-    if strings.Contains(scanner.Text(), "zendesk") || strings.Contains(scanner.Text(), "nflxext") {
+    if strings.Contains(scanner.Text(), "zendesk") || strings.Contains(scanner.Text(), "nflxext") || strings.Contains(scanner.Text(), "wordcamp") {
       // skip zendesk and certain netflix certs.
       continue
     }
-    pattern := strings.ReplaceAll(scanner.Text(), "(", "")
-    pattern = strings.ReplaceAll(scanner.Text(), ")", "")
-    pattern = regexp.QuoteMeta(scanner.Text())
-    pattern = strings.ReplaceAll(pattern, `\*`, ".*")
-    pattern = fmt.Sprintf("^%s$", pattern)
-    regex := regexp.MustCompile(pattern)
-    regexes = append(regexes, regex)
+    regexes = append(regexes, wildcardToRegex(scanner.Text()))
+  }
+  for _, manualTarget := range manualTargets {
+    regexes = append(regexes, wildcardToRegex(manualTarget))
   }
   return regexes, nil
 }
@@ -216,4 +214,13 @@ func dedupe(subdomains []string) []string {
     j++
   }
   return subdomains[:j]
+}
+
+func wildcardToRegex(wildcard string) *regexp.Regexp {
+    pattern := strings.ReplaceAll(wildcard, "(", "")
+    pattern = strings.ReplaceAll(pattern, ")", "")
+    pattern = regexp.QuoteMeta(pattern)
+    pattern = strings.ReplaceAll(pattern, `\*`, ".*")
+    pattern = fmt.Sprintf("^%s$", pattern)
+    return regexp.MustCompile(pattern)
 }
