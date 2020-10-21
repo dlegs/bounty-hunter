@@ -7,9 +7,9 @@
   <p align="center">
     An end-to-end bug bounty monitoring suite
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report Bug</a>
+    <a href="https://github.com/dlegs/bounty-hunter/issues">Report Bug</a>
     ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request Feature</a>
+    <a href="https://github.com/dlegs/bounty-hunter/issues">Request Feature</a>
   </p>
 </p>
 
