@@ -33,7 +33,8 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+![cmd](https://i.imgur.com/bMEFPEo.png)
+![Slack](https://i.imgur.com/PoSzyBh.png)
 
 Bounty Hunter glues together various different recon tools and uses Slack to send alerts of any found hosts. The basic workflow is as follows:
 1. A list of wildcard domains that belong to companies with bug bounty programs is pulled hourly from [arkadiyt/bounty-targets-data](https://github.com/arkadiyt/bounty-targets-data) and compiled into golang regexes.
@@ -75,9 +76,12 @@ This is an example of how to list things you need to use the software and how to
 
 `./bounty-hunter`
 
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-
+### Optional Flags
+`--use_bounty_targets`: (default `true`) boolean to use all wildcard domains belonging to bug bounty programs.
+`--targets`: manually specify target domains.
+`--fingerprints`: JSON file containing subjack fingerprints.
+`--db_name`: name of SQLite db file to use.
+`--slack_env`: name of environment variable containing slack token.
 
 <!-- ROADMAP -->
 ## Roadmap
