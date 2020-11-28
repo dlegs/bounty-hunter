@@ -42,7 +42,7 @@ Bounty Hunter glues together various different recon tools and uses Slack to sen
 3. Found subdomains are put under a suite of scans:
   - Port scanned with [nmap](https://nmap.org/)
   - [Subjack](https://github.com/haccer/subjack) is used to check for a possible subdomain takeover
-  - If a web server is running on a port, a screenshot is taken via [gowitness](https://github.com/sensepost/gowitness) libraries.
+  - If a web server is running on a port, a screenshot is taken via Chrome headless driver libraries.
 4. An sqlite database is used to keep track of found hosts.
 5. Slack is used to fire off notifications.
 
